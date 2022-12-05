@@ -1,1 +1,5 @@
+Copy in this directory all the direcoties of this repository: https://github.com/statistical-group-testing/statistically-soundgrouping 
 
+Copy the file 'test_handler_2.py' in the directory: source_code/core/hypothesis_evaluation
+
+replace the file 'test_evaluation.py' that is located in: source_code/core/hypothesis_evaluation by the one present in this directory.

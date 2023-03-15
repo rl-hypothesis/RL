@@ -1,3 +1,4 @@
-Before training the Agent, read the instructions in ./Group_testing
+The file RL_Hypo/dqn.py is used to train the agent based on Significance only
 
-The file RL_Hypo/dqn.py is used to train the agent
+The file RL_Hypo/dqn_cov_only.py is used to train the agent based on coverage only
+

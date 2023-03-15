@@ -13,7 +13,6 @@ import time
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPT_DIR = SCRIPT_DIR+'/../Group_testing/'
-#SCRIPT_DIR = SCRIPT_DIR+'/../Git_group_testing/'
 
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
@@ -301,8 +300,6 @@ replay_memory = ReplayMemory(batch_size*2)
 df = pd.read_csv('data_df.csv')
 df.index = pd.to_datetime(pd.to_datetime(df.timestamp).dt.date)
 
-users = set(df.cust_id.unique())
-
 columns = df.columns
 columns = [col for col in columns if col not in ('purchase','transaction_date','timestamp')]
 
@@ -455,10 +452,6 @@ for i in range(1,3):
 
 len_start = len(start_cases)
 
-print(len_start)
-
-sys.exit()
-
 for ep in range(epiodes):
     for j, group_state_names in enumerate(start_cases):
         group_state_names = list(group_state_names)
@@ -562,6 +555,7 @@ for ep in range(epiodes):
             dimension = 'rating'
 
             theName = selected_group_name
+            users = set(selected_group.cust_id.unique())
 
             stats, results, names = test_groups([selected_group],[selected_group_name], split_attribute, None, nameGrp_2_index, hierarchy_groups, dimension,\
             top_n, num_hyps, approaches, agg_type, test_arg, users, support, alpha, verbose=False)
@@ -620,7 +614,7 @@ for ep in range(epiodes):
                     sum_p_val = stats.Sum_p_value_BY.values[0]
                     cov_total = stats.Cov_total_BY.values[0]
 
-                    reward_1 = reward_p_value(sum_p_val/num_groups_per_step)
+                    reward_1 = cov_total#reward_p_value(sum_p_val/num_groups_per_step)
 
                     fdr = len( set(group_state_names)-set(ground_truth) )/len( set(group_state_names) )
 
@@ -640,7 +634,7 @@ for ep in range(epiodes):
                     sum_p_val = stats.Sum_p_value_BY.values[0]
                     cov_total = stats.Cov_total_BY.values[0]
 
-                    reward_1 = reward_p_value(sum_p_val/len(group_state_names))
+                    reward_1 = cov_total#reward_p_value(sum_p_val/len(group_state_names))
 
                     fdr = len( set(group_state_names)-set(ground_truth) )/len( set(group_state_names) )
 
@@ -791,18 +785,18 @@ for ep in range(epiodes):
 
             if (aa % target_update == 0 and aa != 0) or (step % target_update == 0 ):
                 target_net.load_state_dict(policy_net.state_dict())
-                torch.save(policy_net.state_dict(), f'policy_net.pth')
+                torch.save(policy_net.state_dict(), f'policy_net_cov_only.pth')
 
                 target_net_explore_exploit.load_state_dict(policy_net_explore_exploit.state_dict())
-                torch.save(policy_net_explore_exploit.state_dict(), f'policy_net_explore_exploit.pth')
+                torch.save(policy_net_explore_exploit.state_dict(), f'policy_net_explore_exploit_cov_only.pth')
 
     ep += 1
 
 target_net.load_state_dict(policy_net.state_dict())
-torch.save(policy_net.state_dict(), f'policy_net.pth')
+torch.save(policy_net.state_dict(), f'policy_net_cov_only.pth')
 
 target_net_explore_exploit.load_state_dict(policy_net_explore_exploit.state_dict())
-torch.save(policy_net_explore_exploit.state_dict(), f'policy_net_explore_exploit.pth')
+torch.save(policy_net_explore_exploit.state_dict(), f'policy_net_explore_exploit_cov_only.pth')
 
 
 dic={'power':powers,
@@ -826,7 +820,7 @@ dic={'power':powers,
 'size_ouptput_data_regions':sizes_data_region}
 
 results=pd.DataFrame(data=dic)
-results.to_csv('iteration_results.csv',index=False)
+results.to_csv('iteration_results_cov_only.csv',index=False)
 
 dic={'loss1':losses1,
 'loss2':losses2,
@@ -836,4 +830,4 @@ dic={'loss1':losses1,
 'qvalues3':q_values3}
 
 results=pd.DataFrame(data=dic)
-results.to_csv('losses.csv',index=False)
+results.to_csv('losses_cov_only.csv',index=False)

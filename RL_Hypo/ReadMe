@@ -1,7 +1,6 @@
 Import the data file located in https://drive.google.com/file/d/1zTtCwQ13mR6jGY4FutG3q2WxloRyn2E4/view?usp=sharing
 
 
-
 The class in test_dqn.py is used to make the link between the policies and the UI:
 
 The instantiation of the class should be done before the systems runs with 5 parameters:
@@ -11,7 +10,46 @@ The instantiation of the class should be done before the systems runs with 5 par
 - num_groups_per_step: Maximum number of regions returned each iteration. Default=4
 - num_agg: Number of aggregation functions. Default=3 (Mean - Variance - Distribution).
 
-The loop after the class instantiation in test_dqn.py simulate a fully guided scenario. Each time, the method "get_results" is called having 6 parameters and 1 output:
+The loop after the class instantiation in test_dqn.py simulate a fully guided scenario. Each time, the method "get_results" is called having 6 parameters 
+and 1 output:
 Parameters:
 - policy_name: String that contains the name of the policy we want to use.
-- prev_selected: The data region selected in the previous iteration. Default=None. It is used to infer Exploration data regions. In the first iteration
+- prev_selected: The data region selected in the previous iteration. Default=None. 
+                 It is used to infer Exploration data regions. In the first iteration, the parameter should be None as we don't have any previously 
+                 selected region.
+- list_regions: List of input Data regions. Default=None.
+                The policy chooses one of that list in the case of performing "Exploitation". 
+                The parameters takes also the starting data region chosen by the user to start the exploration.
+                In that case, if the value is None, one data region is selected randomly from all possible starting regions.
+- agg_function: The name of the previous aggregation function. Default=None.
+                The value of the first iteration is None.
+- filters_functions: List of the aggregation functions that are considered. Default=None.
+                     If None, all functions (mean, variance, distribution) are considered.
+                     If filters_functions=['mean','variance'], only these two aggregations are considered. 'variance' will not.
+- filters_attributes: List of attributes that are considered. Default None.
+                      If None, all attributes are considered.
+                      In the case of 'MovieLens', if filters_attributes=['gender','age','genre'], only these attributes are considered. the remaining
+                      ones are not.
+
+Output:
+Pandas DataFrame that has the following columns:
+- power: The power score of the hypothesis test. The highest the best.
+- fdr: The FDR score of the hypothesis test. The lowest the best.
+- max_pval: Maximum p-value of returned regions.
+- min_pval: Minimum p-value of returned regions.
+- sum_pval: Sum of all p-values of returned regions.
+- coverage: Coverage of all returned regions.
+- firs_data_region: If list_regions=None, it gives the name of the starting data region selected randomly.
+- input_data_region: The name of data region that is selected either from 'list_regions' or through an "Exploration".
+- attributes_combination_input_data_region: String combination of all attirbutes of 'input_data_region'.
+- cust_ids_input_data_region: Set of all customers present in the returned data region 'input_data_region'.
+- hypothesis: List in form ['One-Sample', Value, Function]. Function represents the chosen aggregation in this iteration.
+- action: 'Exploitation' or 'Exploration'. If 'Exploitation', 'input_data_region' is from 'list_regions'. Otherwise, it is the start of a new Tree.
+- output_data_regions: List of statistically sound data regions after applying 'hypothesis' on 'input_data_region'.
+- size_output_set: The size of each data region in 'output_data_regions'.
+- attributes_combination_output_data_regions: The combination of all attirbutes of each data region in 'output_data_regions'.
+- cust_ids_output_data_regions: Set of all customers of each data region in 'output_data_regions'.
+- done: If True, the exploration stops. Otherwise, False.
+
+
+RL_example.png shows a simulation of a fully guided simulation on 3 steps.

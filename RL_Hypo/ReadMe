@@ -1,1 +1,17 @@
 Import the data file located in https://drive.google.com/file/d/1zTtCwQ13mR6jGY4FutG3q2WxloRyn2E4/view?usp=sharing
+
+
+
+The class in test_dqn.py is used to make the link between the policies and the UI:
+
+The instantiation of the class should be done before the systems runs with 5 parameters:
+- policies: List of the name of all possible policies.
+- dataset: The name of the dataset used. Default='MovieLens'
+- num_attr: Number of attributes in the dataset. Default=6 (Number of attributes in MovieLens)
+- num_groups_per_step: Maximum number of regions returned each iteration. Default=4
+- num_agg: Number of aggregation functions. Default=3 (Mean - Variance - Distribution).
+
+The loop after the class instantiation in test_dqn.py simulate a fully guided scenario. Each time, the method "get_results" is called having 6 parameters and 1 output:
+Parameters:
+- policy_name: String that contains the name of the policy we want to use.
+- prev_selected: The data region selected in the previous iteration. Default=None. It is used to infer Exploration data regions. In the first iteration

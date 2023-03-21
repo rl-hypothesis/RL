@@ -563,7 +563,7 @@ class GetRegions(object):
         return results
 
 
-policies = ['power_only']
+policies = ['power_only','cov_only']
 get_regions = GetRegions(policies, 'MovieLens')
 
 regions = []

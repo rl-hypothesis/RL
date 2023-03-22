@@ -46,9 +46,10 @@ Pandas DataFrame that has the following columns:
 - hypothesis: List in form ['One-Sample', Value, Function]. Function represents the chosen aggregation in this iteration.
 - action: 'Exploitation' or 'Exploration'. If 'Exploitation', 'input_data_region' is from 'list_regions'. Otherwise, it is the start of a new Tree.
 - output_data_regions: List of statistically sound data regions after applying 'hypothesis' on 'input_data_region'.
-- size_output_set: The size of each data region in 'output_data_regions'.
+- size_output_set: The number of data regiosn in 'output_data_regions'.
 - attributes_combination_output_data_regions: The combination of all attirbutes of each data region in 'output_data_regions'.
 - cust_ids_output_data_regions: Set of all customers of each data region in 'output_data_regions'.
+- size_ouptput_data_regions: The size of each data region in 'output_data_regions'.
 - done: If True, the exploration stops. Otherwise, False.
 
 

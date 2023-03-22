@@ -528,7 +528,7 @@ class GetRegions(object):
         attribute_data_region = self.__name_to_attributes(selected_group_name)
         users_data_regions = set(selected_group.cust_id.unique())
         hypotheses = test_arg+[agg_type]
-        sizes = [len(i) for i in group_state]
+        sizes = [len(self.nameGrp_2_index[0][i]) for i in group_state_names]
 
         if explore:
             explor_exploit = 'Explore'
@@ -536,8 +536,7 @@ class GetRegions(object):
             explor_exploit = 'Exploit'
 
         attribute_set_output_data_regions = [self.__name_to_attributes(i) for i in group_state_names]
-        users_set_output_data_regions = [set(i.cust_id.unique()) for i in group_state]
-        sizes_data_region = [len(i) for i in group_state]
+        users_set_output_data_regions = [set(self.nameGrp_2_index[0][i].cust_id.unique()) for i in group_state_names]
 
         dic={'power':[power],
         'fdr':[fdr],
@@ -551,19 +550,21 @@ class GetRegions(object):
         'cust_ids_input_data_region':[users_data_regions],
         'hypothesis':[hypotheses],
         'action':[explor_exploit],
-        'size_output_set':[sizes],
+        'size_output_set':[len(group_state_names)],
         'output_data_regions':[group_state_names],
         'attributes_combination_output_data_regions':[attribute_set_output_data_regions],
         'cust_ids_output_data_regions':[users_set_output_data_regions],
-        'size_ouptput_data_regions':[sizes_data_region],
-        'done':[done]}
+        'size_ouptput_data_regions':[sizes],
+        'done':[not done]}
 
         results = pd.DataFrame(data=dic)
 
         return results
 
 
-policies = ['power_only','cov_only']
+policies = ['power_only']
+
+#Call the class before starting the loop
 get_regions = GetRegions(policies, 'MovieLens')
 
 regions = []

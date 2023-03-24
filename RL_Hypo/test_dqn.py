@@ -456,9 +456,11 @@ class GetRegions(object):
         approaches = [-1,0] #Alpha investing
         alpha = 0.05
         dimension = 'rating'
-
+        
+        users = set(selected_group.cust_id.unique())
+        
         stats, results, names = test_groups([selected_group],[selected_group_name], split_attribute, None, self.nameGrp_2_index, self.hierarchy_groups, dimension,\
-        top_n, num_hyps, approaches, agg_type, test_arg, self.users, self.support, alpha, verbose=False)
+        top_n, num_hyps, approaches, agg_type, test_arg, users, self.support, alpha, verbose=False)
 
         names = names[0]
 

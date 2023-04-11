@@ -564,7 +564,7 @@ class GetRegions(object):
         return results
 
 
-policies = ['power_only','cov_only']
+policies = ['power_only','cov_only', 'fdr_only', 'cov_power']
 
 #Call the class before starting the loop
 get_regions = GetRegions(policies, 'MovieLens')

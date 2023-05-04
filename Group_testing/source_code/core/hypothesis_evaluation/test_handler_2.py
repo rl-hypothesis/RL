@@ -55,13 +55,14 @@ agg_type, test_arg, users_1, support, alpha, verbose=False):
         dicte_2 = dict()
 
         key = (grp, split_attribute)
+        
+        if key in hierarchy:
+            for i in hierarchy[ key ]:
+                df = names[j][i]
 
-        for i in hierarchy[ key ]:
-            df = names[j][i]
-
-            liste.append(i)
-            dicte[i] = df
-            dicte_2[i] = set(df.cust_id.unique())
+                liste.append(i)
+                dicte[i] = df
+                dicte_2[i] = set(df.cust_id.unique())
 
         nameGrp_2_index.append( dicte )
         group_2_users.append( dicte_2 )

@@ -10,6 +10,7 @@ import itertools
 import sys
 import os
 import time
+import pickle
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPT_DIR = SCRIPT_DIR+'/../Group_testing/'
@@ -99,14 +100,20 @@ class Agent_explore_exploit(nn.Module):
 
 class GetRegions(object):
     def __init__(self, policies, dataset, num_attr=6, num_groups_per_step=4, num_agg=3):
-        self.support = 5
+        if dataset == 'MovieLens':
+            self.support = 5
+            self.group_vector_size = 69
+            suffix = ''
+        elif dataset == 'TestAssignment':
+            self.support = 1
+            self.group_vector_size = 471
+            suffix = '_assignment'
+
+        self.__prepare_data(dataset)
 
         self.num_agg = num_agg
-        self.num_attr = num_attr
         self.num_groups_per_step = num_groups_per_step
-        
         self.hidden_size = 128
-        self.group_vector_size = 69
         self.state_size = self.num_groups_per_step*self.group_vector_size+self.num_agg
         
         self.policies = {}
@@ -115,23 +122,24 @@ class GetRegions(object):
         for policy in policies:
 
             policy_net = Agent(self.state_size, self.hidden_size, self.num_groups_per_step, self.num_attr, self.num_agg)
-            policy_net.load_state_dict(torch.load(f'policy_net_{policy}.pth'))
+            policy_net.load_state_dict(torch.load(f'policy_net_{policy}{suffix}.pth'))
             policy_net.eval()
 
             policy_net_explore_exploit = Agent_explore_exploit(self.state_size, self.hidden_size)
-            policy_net_explore_exploit.load_state_dict(torch.load(f'policy_net_explore_exploit_{policy}.pth'))
+            policy_net_explore_exploit.load_state_dict(torch.load(f'policy_net_explore_exploit_{policy}{suffix}.pth'))
             policy_net_explore_exploit.eval()
 
             self.policies[policy] = policy_net
             self.expl_policies[policy] = policy_net_explore_exploit
-
-        self.__prepare_data(dataset)
 
         self.idx2agg = {0:'mean', 1:'variance', 2:'distribution'}
         self.agg2idx = {'mean':np.array([1,0,0]), 'variance':np.array([0,1,0]), 'distribution':np.array([2,0,1])}
 
         self.idx2method = {-1:'TRAD_BY', 0:'TRAD_BN',1:'COVER_G',2:'coverage_Side_1',3:'coverage_Side_2', 4:'COVER_⍺',\
         5:'β-Farsighted',6:'γ-Fixed',7:'ẟ-Hopeful',8:'Ɛ-Hybrid',9:'Ψ-Support'}
+
+        self.ground_truth_dict = pickle.load( open(f'ground_truth{suffix}.pickle','rb') )
+        self.ground_truth_dict = eval(self.ground_truth_dict)
 
     def worker(self, args):
         key1 = args[0]
@@ -171,8 +179,38 @@ class GetRegions(object):
         group_handler = GroupHandler()
         period_handler = PeriodHandler()
 
-        df = pd.read_csv(f'{dataset}.csv')
-        df.index = pd.to_datetime(pd.to_datetime(df.timestamp).dt.date)
+        if dataset == 'MovieLens':
+            df = pd.read_csv(f'MovieLens.csv')
+            df.index = pd.to_datetime(pd.to_datetime(df.timestamp).dt.date)
+        elif dataset == 'TestAssignment':
+            df = pd.read_csv('./Data/matmat/answers.csv')
+            df = df.drop(columns=['id','random','log','answer'])
+
+            df2 = pd.read_csv('./Data/matmat/items.csv')
+            df2['operation'] = df2.data.apply(lambda x: 'unique' if 'operation' not in eval(x).keys() else eval(x)['operation'])
+            df2['operands'] = df2.data.apply(lambda x: len(eval(x)['operands']) )
+
+            df2 = df2.drop(columns=['skill_lvl_3','data','answer','question'])
+            df2 = df2.rename(columns={'id':'item'})
+            df2 = df2.rename(columns={'skill':'skill_lvl_3'})
+            df = pd.merge(df,df2, on='item')
+
+            df = df.rename(columns={'item':'article_id','student':'cust_id','correct':'rating','time':'timestamp'})
+            df = df.drop(columns=['response_time', 'answer_expected'])
+            df.at[df.skill_lvl_2.isna(),['skill_lvl_2']] = 2018
+
+            df.timestamp = df.timestamp.apply(lambda x: str(x).split(' ')[0])
+            df.timestamp = pd.to_datetime(df.timestamp)
+            df.index = pd.to_datetime(df.timestamp.dt.date)
+
+            df.skill_lvl_1 = df.skill_lvl_1.astype('str')
+            df.skill_lvl_3 = df.skill_lvl_3.astype('str')
+
+            df.skill_lvl_2 = df.skill_lvl_2.astype('int32')
+            df.skill_lvl_2 = df.skill_lvl_2.astype('str')
+
+            df.operands = df.operands.astype('str')
+
 
         self.users = set(df.cust_id.unique())
 
@@ -266,6 +304,7 @@ class GetRegions(object):
         self.all_names_2 = [name for name in self.all_names_2 if len(name.split('_'))==1]
         self.all_names_2 = sorted(self.all_names_2, key=lambda x:len(self.nameGrp_2_index[0][x].cust_id.unique()), reverse=True)
 
+        self.num_attr = len(self.columns_2)
         #self.start_cases = []
 
         #for i in range(1,3):
@@ -402,6 +441,12 @@ class GetRegions(object):
             group_state = [self.nameGrp_2_index[0][i] for i in group_state_names]
             state_2 = self.__data2state(group_state)
 
+            remaining_2 = self.num_groups_per_step - len(group_state)
+                
+            if remaining_2 > 0:
+                zeros = np.zeros(remaining_2*self.group_vector_size)
+                state_2 = np.concatenate( (state_2,zeros) )
+
             state_2 = np.concatenate( (state_2,state_hypo) )
             state_2 = torch.tensor(state_2).double().view(1,-1)
 
@@ -453,12 +498,12 @@ class GetRegions(object):
 
         top_n = [self.num_groups_per_step]
         num_hyps = [1]
-        approaches = [-1,0] #Alpha investing
+        approaches = [-1] #Alpha investing
         alpha = 0.05
         dimension = 'rating'
-        
+
         users = set(selected_group.cust_id.unique())
-        
+
         stats, results, names = test_groups([selected_group],[selected_group_name], split_attribute, None, self.nameGrp_2_index, self.hierarchy_groups, dimension,\
         top_n, num_hyps, approaches, agg_type, test_arg, users, self.support, alpha, verbose=False)
 
@@ -479,15 +524,17 @@ class GetRegions(object):
             done = False
         else:
             groups_results = results[num_hyps[0]*100][self.num_groups_per_step][self.idx2method[approaches[0]]][0]
-            ground_truth = results[num_hyps[0]*100][self.num_groups_per_step][self.idx2method[approaches[1]]][0]
+            #ground_truth = results[num_hyps[0]*100][self.num_groups_per_step][self.idx2method[approaches[1]]][0]
 
             p_values = groups_results['p-value'].values
 
             groups_results = groups_results.group1.unique()
             groups_results = list(groups_results)
 
-            ground_truth = ground_truth.group1.unique()
-            ground_truth = list(ground_truth)
+            #ground_truth = ground_truth.group1.unique()
+            #ground_truth = list(ground_truth)
+
+            ground_truth = self.ground_truth_dict[agg_type]
 
             if len(ground_truth) != 0:
                 power = len( set(groups_results).intersection(set(ground_truth)) )/len( set(ground_truth) )
@@ -563,8 +610,7 @@ class GetRegions(object):
 
         return results
 
-
-policies = ['power_only','cov_only', 'fdr_only', 'cov_power']
+policies = ['Sig','Cov','Nov','SigCov','SigNov','CovNov','SigCovNov']
 
 #Call the class before starting the loop
 get_regions = GetRegions(policies, 'MovieLens')
@@ -579,9 +625,9 @@ functions = []
 for i in range(3):
     print(f'---------- {i}\n')
     if i == 0:
-        df = get_regions.get_results('power_only')
+        df = get_regions.get_results('Sig')
     else:
-        df = get_regions.get_results('power_only', prev_selected=selected_group, list_regions=list_regions, agg_function=agg_function)
+        df = get_regions.get_results('Sig', prev_selected=selected_group, list_regions=list_regions, agg_function=agg_function)
 
     prev_selected = df.firs_data_region.values[0]
     selected_group = df.input_data_region.values[0]

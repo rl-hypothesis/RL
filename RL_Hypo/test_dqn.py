@@ -104,10 +104,12 @@ class GetRegions(object):
             self.support = 5
             self.group_vector_size = 69
             suffix = ''
+            self.vv = 2.5
         elif dataset == 'TestAssignment':
             self.support = 1
             self.group_vector_size = 471
             suffix = '_assignment'
+            self.vv = 0.5
 
         self.__prepare_data(dataset)
 
@@ -210,6 +212,8 @@ class GetRegions(object):
             df.skill_lvl_2 = df.skill_lvl_2.astype('str')
 
             df.operands = df.operands.astype('str')
+
+            df.visualization = df.visualization.apply(lambda x: x.replace('_','-'))
 
 
         self.users = set(df.cust_id.unique())
@@ -489,7 +493,7 @@ class GetRegions(object):
         test_arg = ['One-Sample']
 
         if action_agg < 2:
-            test_arg.append(2.5)
+            test_arg.append(self.vv)
         else:
             test_arg.append('uniform')
 
